@@ -1,7 +1,7 @@
 function plot_camera(P, s)
     [center, C_axis] = camera_center_and_axis(P);
 
-    scatter3(center(1), center(2), center(3), 'filled', 'MarkerEdgeColor', 'r', 'MarkerFaceColor', 'r');
+    scatter3(center(1), center(2), center(3), 'filled');
     hold on;
 
     % Plot principal C_axis sd by the given factor
@@ -12,7 +12,7 @@ function plot_camera(P, s)
     xlim([center(1) - s, center(1) + s]);
     ylim([center(2) - s, center(2) + s]);
     zlim([center(3) - s, center(3) + s]);
-
+legend("camera center","camera axis")
     grid on;
 
 end

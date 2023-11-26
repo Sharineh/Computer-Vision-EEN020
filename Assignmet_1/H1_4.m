@@ -35,6 +35,10 @@ H3 = [sqrt(5) 1 1;...
 H4 = [1 -5 2;...
       0  3 0;...
       sqrt(3) 0 2*sqrt(3)];
+rank(H1)
+rank(H2)
+rank(H3)
+rank(H4)
 %% Homogeneous coordinate of x and y 
 homo_points = [points ;ones(1,length(x)) ];
 H1_points = pflat(H1*homo_points);
@@ -63,5 +67,3 @@ title('H3')
 subplot(3,2,5)
 scatter3(H4_points(1,:),H4_points(2,:),H4_points(3,:),'o','filled')
 title('H4')
-
-
