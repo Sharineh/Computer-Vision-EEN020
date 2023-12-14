@@ -1,7 +1,7 @@
-function [E , erms] = estimate_E_robust(k,x1s,x2s)
+function [E , erms,x1_inliers,x2_inliers] = estimate_E_robust(k,x1s,x2s)
 %ESTIMATE_E_ROBUST Summary of this function goes here
 %   Detailed explanation goes here
-err_thershold = 1/k(1,1);
+err_thershold = 2/k(1,1);
 x1_norm = pflat(k^-1* x1s);
 x2_norm = pflat(k^-1* x2s);
 indices = randperm(length(x1_norm), 8);
@@ -15,11 +15,11 @@ E = enforce_essential(E_approx);
 inliers = (error1.^2+error2.^2)/2 < err_thershold^2;
 num_inliers = sum(inliers);
 
-alpha = 0.999;
+alpha = 0.98;
 eps=0.1;
 s=8;
-T = log10(1-alpha)/log10(1-eps^s);
-while T ~= 0 
+T = log10(1-alpha)/log10(1-eps^s); 
+while T >= 0
 indices = randperm(length(x1_norm), 8);
 x1_norm_rand = x1_norm(:,indices);
 x2_norm_rand = x2_norm(:,indices);
@@ -35,12 +35,13 @@ if num_inliers_new > num_inliers
     E = E_new;
     error1 = error1_new;
     error2 = error2_new;
+    x1_inliers = x1s(:,inliers_new);
+    x2_inliers = x2s(:,inliers_new);
 end
 if eps < num_inliers/num_points
     eps = num_inliers/num_points;
     T = ceil(log10(1-alpha)/log10(1-eps^s));
 end
-
 T = T - 1;
 end
 erms = sqrt((0.5/length(x1s))*sum(error1.^2 + error2.^2));
