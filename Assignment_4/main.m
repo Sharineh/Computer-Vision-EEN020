@@ -1,5 +1,5 @@
 %% Computer Exercise 1
-clc 
+clc
 clear all
 % calibration matrix
 K = load("data-2023/data/compEx1data.mat","K").K;
@@ -107,9 +107,9 @@ matches = vl_ubcmatch(dA , dB );
 % Homogenaizing xA and xB
 xA = [fA(1:2 , matches(1 ,:));ones(1,length(matches))];
 xB = [fB(1:2 , matches(2 ,:));ones(1,length(matches))];
-% Estimate E from vl_sift matches 
+% Estimate E from vl_sift matches
 [E ,erms_ransac,xA_inliers,xB_inliers] = estimate_E_robust(K,xA,xB); % 1689 inliers
-% extract P2 from E 
+% extract P2 from E
 P1 = [eye(3) zeros(3,1)];
 P2_cell = extract_P_from_E(E);
 points = cell(4,1);
@@ -121,10 +121,79 @@ for i = 1 : 4
     plot3(points{i}(1,:),points{i}(2,:),points{i}(3,:),'.r')
     grid on
     hold on
-    plot_camera(P1,5);
-    plot_camera(P2_cell{i},5)
+    plot_camera(P1,2);
+    plot_camera(P2_cell{i},2)
     hold off
 end
-P2 = P2_cell{1};
-X = points{1};
+P2 = P2_cell{3};
+X = points{3};
 %%
+clc
+data = load("data-2023\data\compEx3data.mat");
+P1 = data.P{1};
+P2 = data.P{2};
+K =  data.K;
+x1 = data.x{1};
+x2 = data.x{2};
+X = data.X;
+% before LM
+rep_err_vec = zeros(1,length(X));
+for i = 1 : length(X)
+    rep_err_vec(i) = ComputeReprojectionError(P1,P2,X(:,i),x1(:,i),x2(:,i));
+end
+median_before = median(rep_err_vec);
+error_sum = sum(rep_err_vec);
+% LM
+r = [];
+J = [];
+X_opt = zeros(size(X));
+
+for i = 1 : length(X)
+
+    mu = 1;
+
+    while mu > 1e-6 && mu < 1e6
+
+        [r_i,J_i] = LinearizeReprojErr(P1,P2,X(:,i),x1(:,i),x2(:,i)) ;
+
+        delta_x = ComputeUpdate(r_i,J_i,mu);
+
+        new_X = pflat(X(:,i) + delta_x);
+
+        [err_prev,~]   = ComputeReprojectionError(P1,P2,X(:,i),x1(:,i),x2(:,i));
+
+        [err_update,~] = ComputeReprojectionError(P1,P2,new_X,x1(:,i),x2(:,i));
+
+        if err_update < err_prev
+
+            mu = mu / 10;
+
+            X_opt(:,i) = pflat(new_X);
+
+        else
+
+            mu = mu * 10;
+            X_opt(:,i) = X(:,i);
+
+        end
+    end
+end
+
+% After LM
+rep_err_vec_lm = zeros(1,length(X_opt));
+
+for i = 1 : length(X_opt)
+
+    rep_err_vec_lm(i) = ComputeReprojectionError(P1,P2,X_opt(:,i),x1(:,i),x2(:,i));
+
+end
+error_sum_lm = sum(rep_err_vec_lm);
+
+median_after= median(rep_err_vec_lm);
+%% Plots 
+plot3(X(1,:),X(2,:),X(3,:),'.')
+hold on
+plot3(X_opt(1,:),X_opt(2,:),X_opt(3,:),'.')
+grid on
+legend('3D points','Refined 3D points')
+
